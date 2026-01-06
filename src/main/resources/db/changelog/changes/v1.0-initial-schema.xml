@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ========================================
+         CHANGESET 1: Création de la table users
+         ======================================== -->
+    <changeSet id="1" author="supplychainx">
+        <createTable tableName="users">
+            <column name="id_user" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="first_name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="email" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="password" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="role" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <rollback>
+            <dropTable tableName="users"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ========================================
+         CHANGESET 2: Création de la table suppliers
+         ======================================== -->
+    <changeSet id="2" author="supplychainx">
+        <createTable tableName="suppliers">
+            <column name="id_supplier" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="contact" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rating" type="DOUBLE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="lead_time" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <rollback>
+            <dropTable tableName="suppliers"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ========================================
+         CHANGESET 3: Création de la table raw_materials
+         ======================================== -->
+    <changeSet id="3" author="supplychainx">
+        <createTable tableName="raw_materials">
+            <column name="id_material" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock_min" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="unit" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <rollback>
+            <dropTable tableName="raw_materials"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ========================================
+         CHANGESET 4: Table de jointure raw_material_suppliers (ManyToMany)
+         ======================================== -->
+    <changeSet id="4" author="supplychainx">
+        <createTable tableName="raw_material_suppliers">
+            <column name="raw_material_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="supplier_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        
+        <addPrimaryKey tableName="raw_material_suppliers" 
+                      columnNames="raw_material_id, supplier_id"/>
+        
+        <addForeignKeyConstraint baseTableName="raw_material_suppliers"
+                                baseColumnNames="raw_material_id"
+                                constraintName="fk_raw_material_suppliers_material"
+                                referencedTableName="raw_materials"
+                                referencedColumnNames="id_material"
+                                onDelete="CASCADE"/>
+        
+        <addForeignKeyConstraint baseTableName="raw_material_suppliers"
+                                baseColumnNames="supplier_id"
+                                constraintName="fk_raw_material_suppliers_supplier"
+                                referencedTableName="suppliers"
+                                referencedColumnNames="id_supplier"
+                                onDelete="CASCADE"/>
+        <rollback>
+            <dropTable tableName="raw_material_suppliers"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ========================================
+         CHANGESET 5: Création de la table supply_orders
+         ======================================== -->
+    <changeSet id="5" author="supplychainx">
+        <createTable tableName="supply_orders">
+            <column name="id_order" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="supplier_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="order_date" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        
+        <addForeignKeyConstraint baseTableName="supply_orders"
+                                baseColumnNames="supplier_id"
+                                constraintName="fk_supply_order_supplier"
+                                referencedTableName="suppliers"
+                                referencedColumnNames="id_supplier"/>
+        <rollback>
+            <dropTable tableName="supply_orders"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ========================================
+         CHANGESET 6: Table de jointure supply_order_materials (ManyToMany)
+         ======================================== -->
+    <changeSet id="6" author="supplychainx">
+        <createTable tableName="supply_order_materials">
+            <column name="supply_order_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="raw_material_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        
+        <addPrimaryKey tableName="supply_order_materials" 
+                      columnNames="supply_order_id, raw_material_id"/>
+        
+        <addForeignKeyConstraint baseTableName="supply_order_materials"
+                                baseColumnNames="supply_order_id"
+                                constraintName="fk_supply_order_materials_order"
+                                referencedTableName="supply_orders"
+                                referencedColumnNames="id_order"
+                                onDelete="CASCADE"/>
+        
+        <addForeignKeyConstraint baseTableName="supply_order_materials"
+                                baseColumnNames="raw_material_id"
+                                constraintName="fk_supply_order_materials_material"
+                                referencedTableName="raw_materials"
+                                referencedColumnNames="id_material"
+                                onDelete="CASCADE"/>
+        <rollback>
+            <dropTable tableName="supply_order_materials"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ========================================
+         CHANGESET 7: Création de la table products
+         ======================================== -->
+    <changeSet id="7" author="supplychainx">
+        <createTable tableName="products">
+            <column name="id_product" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="production_time" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="cost" type="DOUBLE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <rollback>
+            <dropTable tableName="products"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ========================================
+         CHANGESET 8: Création de la table bill_of_materials (BOM)
+         ======================================== -->
+    <changeSet id="8" author="supplychainx">
+        <createTable tableName="bill_of_materials">
+            <column name="id_bom" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="product_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="material_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantity" type="INT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        
+        <addForeignKeyConstraint baseTableName="bill_of_materials"
+                                baseColumnNames="product_id"
+                                constraintName="fk_bom_product"
+                                referencedTableName="products"
+                                referencedColumnNames="id_product"/>
+        
+        <addForeignKeyConstraint baseTableName="bill_of_materials"
+                                baseColumnNames="material_id"
+                                constraintName="fk_bom_material"
+                                referencedTableName="raw_materials"
+                                referencedColumnNames="id_material"/>
+        <rollback>
+            <dropTable tableName="bill_of_materials"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ========================================
+         CHANGESET 9: Création de la table production_orders
+         ======================================== -->
+    <changeSet id="9" author="supplychainx">
+        <createTable tableName="production_orders">
+            <column name="id_order" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="product_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantity" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="start_date" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="end_date" type="DATE"/>
+        </createTable>
+        
+        <addForeignKeyConstraint baseTableName="production_orders"
+                                baseColumnNames="product_id"
+                                constraintName="fk_production_order_product"
+                                referencedTableName="products"
+                                referencedColumnNames="id_product"/>
+        <rollback>
+            <dropTable tableName="production_orders"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ========================================
+         CHANGESET 10: Création de la table customers
+         ======================================== -->
+    <changeSet id="10" author="supplychainx">
+        <createTable tableName="customers">
+            <column name="id_customer" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="address" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="city" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <rollback>
+            <dropTable tableName="customers"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ========================================
+         CHANGESET 11: Création de la table orders (commandes clients)
+         ======================================== -->
+    <changeSet id="11" author="supplychainx">
+        <createTable tableName="orders">
+            <column name="id_order" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="customer_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="product_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantity" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        
+        <addForeignKeyConstraint baseTableName="orders"
+                                baseColumnNames="customer_id"
+                                constraintName="fk_orders_customer"
+                                referencedTableName="customers"
+                                referencedColumnNames="id_customer"/>
+        
+        <addForeignKeyConstraint baseTableName="orders"
+                                baseColumnNames="product_id"
+                                constraintName="fk_orders_product"
+                                referencedTableName="products"
+                                referencedColumnNames="id_product"/>
+        <rollback>
+            <dropTable tableName="orders"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ========================================
+         CHANGESET 12: Création de la table deliveries
+         ======================================== -->
+    <changeSet id="12" author="supplychainx">
+        <createTable tableName="deliveries">
+            <column name="id_delivery" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="order_id" type="BIGINT">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="vehicle" type="VARCHAR(100)"/>
+            <column name="driver" type="VARCHAR(100)"/>
+            <column name="status" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="delivery_date" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="cost" type="DOUBLE">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        
+        <addForeignKeyConstraint baseTableName="deliveries"
+                                baseColumnNames="order_id"
+                                constraintName="fk_delivery_order"
+                                referencedTableName="orders"
+                                referencedColumnNames="id_order"/>
+        <rollback>
+            <dropTable tableName="deliveries"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
