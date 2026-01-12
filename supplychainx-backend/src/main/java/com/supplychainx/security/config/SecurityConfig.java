@@ -13,6 +13,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -21,19 +22,19 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CorsConfigurationSource corsConfigurationSource;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        // Endpoints publics
                         .requestMatchers("/", "/health", "/api/health").permitAll()
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         
-                        // MODULE APPROVISIONNEMENT
                         .requestMatchers("/api/suppliers/**")
                         .hasAnyRole("GESTIONNAIRE_APPROVISIONNEMENT", "RESPONSABLE_ACHATS", "ADMIN")
                         
@@ -43,7 +44,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/supply-orders/**")
                         .hasAnyRole("GESTIONNAIRE_APPROVISIONNEMENT", "RESPONSABLE_ACHATS", "ADMIN")
                         
-                        // MODULE PRODUCTION
                         .requestMatchers("/api/products/**")
                         .hasAnyRole("CHEF_PRODUCTION", "SUPERVISEUR_PRODUCTION", "PLANIFICATEUR", "ADMIN")
                         
@@ -53,7 +53,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/production-orders/**")
                         .hasAnyRole("CHEF_PRODUCTION", "SUPERVISEUR_PRODUCTION", "PLANIFICATEUR", "ADMIN")
                         
-                        // MODULE LIVRAISON
                         .requestMatchers("/api/customers/**")
                         .hasAnyRole("GESTIONNAIRE_COMMERCIAL", "ADMIN")
                         
@@ -63,10 +62,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/deliveries/**")
                         .hasAnyRole("RESPONSABLE_LOGISTIQUE", "SUPERVISEUR_LIVRAISONS", "ADMIN")
                         
-                        // Admin uniquement
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         
-                        // Tous les autres endpoints nécessitent une authentification
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
