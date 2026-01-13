@@ -12,10 +12,8 @@ export const roleGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
     return true;
   }
 
-  // Essayer d'abord depuis le token
   let userRoles = tokenService.getUserRolesFromToken();
   
-  // Si pas de rôles dans le token, essayer depuis le user stocké
   if (!userRoles || userRoles.length === 0) {
     const user = tokenService.getUser() as any;
     console.log('👤 User depuis storage:', user);

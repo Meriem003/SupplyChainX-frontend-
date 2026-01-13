@@ -2,10 +2,6 @@ import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/auth/auth.service';
 
-/**
- * Dashboard du module Administration
- * Page d'accueil pour les utilisateurs avec le rôle ADMIN
- */
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,

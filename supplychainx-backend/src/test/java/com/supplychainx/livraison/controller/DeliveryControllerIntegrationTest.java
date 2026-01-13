@@ -283,7 +283,6 @@ class DeliveryControllerIntegrationTest {
     @Test
     @DisplayName("GET /api/deliveries?status=PLANIFIEE - Filtrer par statut")
     void testGetDeliveriesByStatus_Planifiee() throws Exception {
-        // Create a new order for the second delivery to avoid unique constraint violation
         Order newOrder = new Order();
         newOrder.setCustomer(testCustomer);
         newOrder.setProduct(testProduct);

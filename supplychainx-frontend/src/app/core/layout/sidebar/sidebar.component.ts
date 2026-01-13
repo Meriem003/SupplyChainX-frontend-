@@ -3,20 +3,13 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../auth/auth.service';
 
-/**
- * Interface pour un élément de menu
- */
 interface MenuItem {
   label: string;
   icon: string;
   route: string;
-  roles: string[]; // Rôles autorisés à voir ce menu
+  roles: string[];
 }
 
-/**
- * Sidebar (menu latéral)
- * Affiche les menus selon le rôle de l'utilisateur
- */
 @Component({
   selector: 'app-sidebar',
   standalone: true,
@@ -66,7 +59,6 @@ interface MenuItem {
       color: white;
     }
 
-    /* Menu actif */
     .menu-item.active {
       background-color: rgba(102, 126, 234, 0.2);
       border-left-color: #667eea;
@@ -86,9 +78,7 @@ interface MenuItem {
   `]
 })
 export class SidebarComponent {
-  // Liste complète des menus
   private readonly allMenuItems: MenuItem[] = [
-    // Menu Admin
     {
       label: 'Tableau de bord Admin',
       icon: '👑',
@@ -101,78 +91,104 @@ export class SidebarComponent {
       route: '/admin/users',
       roles: ['ADMIN']
     },
-
-    // Menu Approvisionnement
     {
       label: 'Tableau de bord',
       icon: '📊',
       route: '/procurement/dashboard',
-      roles: ['ADMIN', 'APPROVISIONNEMENT']
+      roles: ['ADMIN', 'GESTIONNAIRE_APPROVISIONNEMENT', 'RESPONSABLE_ACHATS', 'SUPERVISEUR_LOGISTIQUE']
     },
     {
-      label: 'Demandes d\'approvisionnement',
-      icon: '📝',
-      route: '/procurement/requests',
-      roles: ['ADMIN', 'APPROVISIONNEMENT']
+      label: 'Fournisseurs',
+      icon: '🏢',
+      route: '/procurement/suppliers',
+      roles: ['ADMIN', 'GESTIONNAIRE_APPROVISIONNEMENT', 'RESPONSABLE_ACHATS', 'SUPERVISEUR_LOGISTIQUE']
+    },
+    {
+      label: 'Matières premières',
+      icon: '📦',
+      route: '/procurement/raw-materials',
+      roles: ['ADMIN', 'GESTIONNAIRE_APPROVISIONNEMENT', 'RESPONSABLE_ACHATS', 'SUPERVISEUR_LOGISTIQUE']
+    },
+    {
+      label: 'Stock critique',
+      icon: '⚠️',
+      route: '/procurement/critical-stock',
+      roles: ['ADMIN', 'GESTIONNAIRE_APPROVISIONNEMENT', 'RESPONSABLE_ACHATS', 'SUPERVISEUR_LOGISTIQUE']
     },
     {
       label: 'Commandes fournisseurs',
       icon: '🛒',
-      route: '/procurement/orders',
-      roles: ['ADMIN', 'APPROVISIONNEMENT']
+      route: '/procurement/supply-orders',
+      roles: ['ADMIN', 'GESTIONNAIRE_APPROVISIONNEMENT', 'RESPONSABLE_ACHATS', 'SUPERVISEUR_LOGISTIQUE']
     },
-
-    // Menu Production
     {
       label: 'Tableau de bord',
       icon: '📊',
       route: '/production/dashboard',
-      roles: ['ADMIN', 'PRODUCTION']
+      roles: ['ADMIN', 'CHEF_PRODUCTION', 'PLANIFICATEUR', 'SUPERVISEUR_PRODUCTION']
     },
     {
-      label: 'Ordres de fabrication',
+      label: 'Produits finis',
+      icon: '📦',
+      route: '/production/products',
+      roles: ['ADMIN', 'CHEF_PRODUCTION', 'PLANIFICATEUR', 'SUPERVISEUR_PRODUCTION']
+    },
+    {
+      label: 'Ordres de production',
       icon: '🏭',
       route: '/production/orders',
-      roles: ['ADMIN', 'PRODUCTION']
+      roles: ['ADMIN', 'CHEF_PRODUCTION', 'PLANIFICATEUR', 'SUPERVISEUR_PRODUCTION']
+    },
+    {
+      label: 'Planification',
+      icon: '📅',
+      route: '/production/planning',
+      roles: ['ADMIN', 'CHEF_PRODUCTION', 'PLANIFICATEUR']
     },
     {
       label: 'Gestion des stocks',
-      icon: '📦',
+      icon: '📊',
       route: '/production/inventory',
-      roles: ['ADMIN', 'PRODUCTION']
+      roles: ['ADMIN', 'CHEF_PRODUCTION', 'SUPERVISEUR_PRODUCTION']
     },
-
-    // Menu Livraison
     {
       label: 'Tableau de bord',
       icon: '📊',
       route: '/delivery/dashboard',
-      roles: ['ADMIN', 'LIVRAISON']
+      roles: ['ADMIN', 'GESTIONNAIRE_COMMERCIAL', 'RESPONSABLE_LOGISTIQUE', 'SUPERVISEUR_LIVRAISONS']
     },
     {
-      label: 'Livraisons en cours',
+      label: 'Clients',
+      icon: '👥',
+      route: '/delivery/customers',
+      roles: ['ADMIN', 'GESTIONNAIRE_COMMERCIAL', 'RESPONSABLE_LOGISTIQUE', 'SUPERVISEUR_LIVRAISONS']
+    },
+    {
+      label: 'Commandes clients',
+      icon: '📝',
+      route: '/delivery/sales-orders',
+      roles: ['ADMIN', 'GESTIONNAIRE_COMMERCIAL', 'RESPONSABLE_LOGISTIQUE', 'SUPERVISEUR_LIVRAISONS']
+    },
+    {
+      label: 'Livraisons',
       icon: '🚚',
       route: '/delivery/shipments',
-      roles: ['ADMIN', 'LIVRAISON']
+      roles: ['ADMIN', 'GESTIONNAIRE_COMMERCIAL', 'RESPONSABLE_LOGISTIQUE', 'SUPERVISEUR_LIVRAISONS']
     },
     {
-      label: 'Historique',
+      label: 'Historique livraisons',
       icon: '📋',
       route: '/delivery/history',
-      roles: ['ADMIN', 'LIVRAISON']
+      roles: ['ADMIN', 'RESPONSABLE_LOGISTIQUE', 'SUPERVISEUR_LIVRAISONS']
     }
   ];
 
-  // Signal pour les menus visibles
   visibleMenuItems = signal<MenuItem[]>([]);
 
   constructor(private readonly authService: AuthService) {
     this.loadMenuItems();
   }
 
-  /**
-   * Charge les menus selon le rôle de l'utilisateur
-   */
   private loadMenuItems(): void {
     const user = this.authService.getCurrentUser();
     
@@ -181,7 +197,6 @@ export class SidebarComponent {
       return;
     }
 
-    // Filtrer les menus selon les rôles de l'utilisateur
     const menus = this.allMenuItems.filter(item => 
       item.roles.some(role => user.roles?.includes(role as any))
     );

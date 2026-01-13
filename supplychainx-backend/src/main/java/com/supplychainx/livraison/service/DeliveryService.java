@@ -80,7 +80,6 @@ public class DeliveryService {
         DeliveryStatus status = DeliveryStatus.valueOf(newStatus);
         delivery.setStatus(status);
         
-        // If delivery is marked as LIVREE, update the order status to LIVREE
         if (status == DeliveryStatus.LIVREE) {
             Order order = delivery.getOrder();
             order.setStatus(OrderStatus.LIVREE);

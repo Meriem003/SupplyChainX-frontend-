@@ -53,7 +53,6 @@ public class OpenApiConfig {
                 .termsOfService("https://www.supplychainx.com/terms")
                 .license(mitLicense);
 
-        // Define JWT security scheme for Swagger UI
         SecurityScheme securityScheme = new SecurityScheme()
                 .name("Bearer Authentication")
                 .type(SecurityScheme.Type.HTTP)

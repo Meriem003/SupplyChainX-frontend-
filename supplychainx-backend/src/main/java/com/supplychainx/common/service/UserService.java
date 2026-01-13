@@ -9,6 +9,7 @@ import com.supplychainx.exception.BusinessRuleException;
 import com.supplychainx.exception.ResourceNotFoundException;
 import com.supplychainx.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
     public UserResponseDTO createUser(UserCreateDTO dto) {
         if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
@@ -29,7 +31,7 @@ public class UserService {
         user.setFirstName(dto.getFirstName());
         user.setLastName(dto.getLastName());
         user.setEmail(dto.getEmail());
-        user.setPassword(dto.getPassword());
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setRole(dto.getRole());
 
         user = userRepository.save(user);

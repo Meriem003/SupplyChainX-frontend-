@@ -30,7 +30,7 @@ export const routes: Routes = [
       {
         path: 'procurement',
         canActivate: [roleGuard],
-        data: { roles: ['ADMIN', 'APPROVISIONNEMENT'] },
+        data: { roles: ['ADMIN', 'APPROVISIONNEMENT', 'GESTIONNAIRE_APPROVISIONNEMENT', 'RESPONSABLE_ACHATS', 'SUPERVISEUR_LOGISTIQUE'] },
         loadChildren: () => import('./features/procurement/procurement.routes')
           .then(m => m.PROCUREMENT_ROUTES)
       },
@@ -38,7 +38,7 @@ export const routes: Routes = [
       {
         path: 'production',
         canActivate: [roleGuard],
-        data: { roles: ['ADMIN', 'PRODUCTION'] },
+        data: { roles: ['ADMIN', 'PRODUCTION', 'CHEF_PRODUCTION', 'PLANIFICATEUR', 'SUPERVISEUR_PRODUCTION'] },
         loadChildren: () => import('./features/production/production.routes')
           .then(m => m.PRODUCTION_ROUTES)
       },
@@ -46,7 +46,7 @@ export const routes: Routes = [
       {
         path: 'delivery',
         canActivate: [roleGuard],
-        data: { roles: ['ADMIN', 'LIVRAISON'] },
+        data: { roles: ['ADMIN', 'LIVRAISON', 'GESTIONNAIRE_COMMERCIAL', 'RESPONSABLE_LOGISTIQUE', 'SUPERVISEUR_LIVRAISONS'] },
         loadChildren: () => import('./features/delivery/delivery.routes')
           .then(m => m.DELIVERY_ROUTES)
       },

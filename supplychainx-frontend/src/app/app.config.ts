@@ -13,9 +13,9 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(
       withInterceptors([
-        authInterceptor,           // 1. Ajoute le token à chaque requête
-        refreshTokenInterceptor,   // 2. Rafraîchit le token si expiré
-        errorInterceptor          // 3. Gère les erreurs
+        authInterceptor,
+        refreshTokenInterceptor,
+        errorInterceptor
       ])
     )
   ]

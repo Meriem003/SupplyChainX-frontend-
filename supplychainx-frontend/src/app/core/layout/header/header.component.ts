@@ -3,30 +3,22 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../auth/auth.service';
 
-/**
- * Header de l'application (en haut)
- * Affiche : Logo, nom de l'utilisateur, bouton de déconnexion
- */
 @Component({
   selector: 'app-header',
   standalone: true,
   imports: [CommonModule],
   template: `
     <header class="header">
-      <!-- Logo et titre -->
       <div class="logo">
         <h1>📦 SupplyChainX</h1>
       </div>
 
-      <!-- Partie droite : profil + déconnexion -->
       <div class="user-section">
-        <!-- Informations utilisateur -->
         <div class="user-info">
           <span class="user-name">{{ userName() }}</span>
           <span class="user-role">{{ userRole() }}</span>
         </div>
 
-        <!-- Bouton déconnexion -->
         <button class="btn-logout" (click)="logout()" title="Se déconnecter">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -49,7 +41,6 @@ import { AuthService } from '../../auth/auth.service';
       color: white;
     }
 
-    /* Logo et titre */
     .logo h1 {
       font-size: 24px;
       font-weight: bold;
@@ -59,7 +50,6 @@ import { AuthService } from '../../auth/auth.service';
       gap: 8px;
     }
 
-    /* Section utilisateur */
     .user-section {
       display: flex;
       align-items: center;
@@ -86,7 +76,6 @@ import { AuthService } from '../../auth/auth.service';
       border-radius: 10px;
     }
 
-    /* Bouton déconnexion */
     .btn-logout {
       display: flex;
       align-items: center;
@@ -107,7 +96,6 @@ import { AuthService } from '../../auth/auth.service';
       transform: translateY(-1px);
     }
 
-    /* Responsive mobile */
     @media (max-width: 768px) {
       .header {
         padding: 0 12px;
@@ -140,29 +128,21 @@ export class HeaderComponent {
     private readonly router: Router,
     private readonly authService: AuthService
   ) {
-    // Récupérer les infos de l'utilisateur connecté
     this.loadUserInfo();
   }
 
-  /**
-   * Charge les informations de l'utilisateur depuis le token
-   */
   private loadUserInfo(): void {
     const user = this.authService.getCurrentUser();
     
     if (user) {
       this.userName.set(user.fullName || user.email || 'Utilisateur');
       
-      // Afficher le rôle principal
       if (user.roles && user.roles.length > 0) {
         this.userRole.set(user.roles[0]);
       }
     }
   }
 
-  /**
-   * Déconnexion : efface le token et redirige vers /login
-   */
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/login']);

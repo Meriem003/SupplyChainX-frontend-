@@ -5,10 +5,6 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { AuthService } from '../../../../core/auth/auth.service';
 import { LoginRequest } from '../../../../core/auth/auth.models';
 
-/**
- * Composant de connexion SupplyChainX
- * Gère l'authentification des utilisateurs via JWT
- */
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -21,7 +17,6 @@ import { LoginRequest } from '../../../../core/auth/auth.models';
           <p>Connectez-vous à votre compte</p>
         </div>
 
-        <!-- Message d'erreur -->
         @if (errorMessage()) {
           <div class="alert alert-error">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -33,7 +28,6 @@ import { LoginRequest } from '../../../../core/auth/auth.models';
           </div>
         }
 
-        <!-- Message de succès -->
         @if (successMessage()) {
           <div class="alert alert-success">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -300,7 +294,6 @@ import { LoginRequest } from '../../../../core/auth/auth.models';
 export class LoginComponent {
   loginForm: FormGroup;
   
-  // Signals pour gérer l'état du composant (Angular 19)
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
   successMessage = signal<string | null>(null);
@@ -316,18 +309,13 @@ export class LoginComponent {
       rememberMe: [false]
     });
 
-    // Si déjà connecté, rediriger
     if (this.authService.isUserAuthenticated()) {
       this.redirectToDashboard();
     }
   }
 
-  /**
-   * Soumission du formulaire de connexion
-   */
   onSubmit(): void {
     if (this.loginForm.invalid) {
-      // Marquer tous les champs comme touchés pour afficher les erreurs
       Object.keys(this.loginForm.controls).forEach(key => {
         this.loginForm.get(key)?.markAsTouched();
       });
@@ -345,16 +333,13 @@ export class LoginComponent {
         this.isLoading.set(false);
         this.successMessage.set('Connexion réussie ! Redirection...');
         
-        // Démarrer le timer de rafraîchissement automatique
         this.authService.startTokenRefreshTimer();
 
-        // Rediriger immédiatement après la connexion
         this.redirectToDashboard();
       },
       error: (error) => {
         this.isLoading.set(false);
         
-        // Gérer les différents types d'erreurs
         if (error.status === 401) {
           this.errorMessage.set('Email ou mot de passe incorrect');
         } else if (error.status === 403) {
@@ -372,9 +357,6 @@ export class LoginComponent {
     });
   }
 
-  /**
-   * Redirige l'utilisateur vers le dashboard approprié selon son rôle
-   */
   private redirectToDashboard(): void {
     const user = this.authService.getCurrentUser();
     
@@ -386,7 +368,6 @@ export class LoginComponent {
       return;
     }
 
-    // Rediriger selon le premier rôle de l'utilisateur
     const primaryRole = user.roles[0];
     console.log('👤 Rôle principal:', primaryRole);
 
@@ -395,21 +376,35 @@ export class LoginComponent {
         console.log('➡️ Redirection vers /admin/dashboard');
         this.router.navigate(['/admin/dashboard']);
         break;
+      
       case 'APPROVISIONNEMENT':
+      case 'GESTIONNAIRE_APPROVISIONNEMENT':
+      case 'RESPONSABLE_ACHATS':
+      case 'SUPERVISEUR_LOGISTIQUE':
         console.log('➡️ Redirection vers /procurement/dashboard');
         this.router.navigate(['/procurement/dashboard']);
         break;
+      
       case 'PRODUCTION':
+      case 'CHEF_PRODUCTION':
+      case 'PLANIFICATEUR':
+      case 'SUPERVISEUR_PRODUCTION':
         console.log('➡️ Redirection vers /production/dashboard');
         this.router.navigate(['/production/dashboard']);
         break;
+      
       case 'LIVRAISON':
+      case 'GESTIONNAIRE_COMMERCIAL':
+      case 'RESPONSABLE_LOGISTIQUE':
+      case 'SUPERVISEUR_LIVRAISONS':
         console.log('➡️ Redirection vers /delivery/dashboard');
         this.router.navigate(['/delivery/dashboard']);
         break;
+      
       default:
         console.warn('⚠️ Rôle non reconnu:', primaryRole);
-        this.router.navigate(['/']);
+        console.warn('⚠️ Redirection par défaut vers /procurement/dashboard');
+        this.router.navigate(['/procurement/dashboard']);
     }
   }
 }

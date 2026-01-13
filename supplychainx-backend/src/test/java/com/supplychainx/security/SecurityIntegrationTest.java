@@ -27,10 +27,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.assertj.core.api.Assertions.*;
 
-/**
- * Tests d'intégration pour le module de sécurité JWT
- * Tests réels avec base H2 en mémoire, sans mocks
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -59,11 +55,9 @@ class SecurityIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // Nettoyer la base de données
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
 
-        // Créer utilisateur test standard
         testUser = new User();
         testUser.setFirstName("John");
         testUser.setLastName("Doe");
@@ -72,7 +66,6 @@ class SecurityIntegrationTest {
         testUser.setRole(UserRole.GESTIONNAIRE_APPROVISIONNEMENT);
         testUser = userRepository.save(testUser);
 
-        // Créer utilisateur admin
         adminUser = new User();
         adminUser.setFirstName("Admin");
         adminUser.setLastName("User");
@@ -81,8 +74,6 @@ class SecurityIntegrationTest {
         adminUser.setRole(UserRole.ADMIN);
         adminUser = userRepository.save(adminUser);
     }
-
-    // ==================== TESTS D'AUTHENTIFICATION ====================
 
     @Test
     @DisplayName("Login valide → retourne Access Token + Refresh Token")
@@ -100,7 +91,6 @@ class SecurityIntegrationTest {
                 .andExpect(jsonPath("$.role").value(testUser.getRole().name()))
                 .andReturn();
 
-        // Vérifier que les tokens sont bien présents et non vides
         AuthResponse response = objectMapper.readValue(
                 result.getResponse().getContentAsString(),
                 AuthResponse.class
@@ -135,7 +125,6 @@ class SecurityIntegrationTest {
     @Test
     @DisplayName("Login avec champs manquants → 400 Bad Request")
     void testLoginMissingFields() throws Exception {
-        // Email manquant
         String invalidJson = "{\"password\":\"password123\"}";
 
         mockMvc.perform(post("/auth/login")
@@ -155,8 +144,6 @@ class SecurityIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
-    // ==================== TESTS ACCÈS ENDPOINTS PROTÉGÉS ====================
-
     @Test
     @DisplayName("Accès endpoint protégé sans token → 401 Unauthorized")
     void testAccessProtectedEndpointWithoutToken() throws Exception {
@@ -168,10 +155,8 @@ class SecurityIntegrationTest {
     @Test
     @DisplayName("Accès endpoint protégé avec Access Token valide → 200 OK")
     void testAccessProtectedEndpointWithValidToken() throws Exception {
-        // 1. Login pour obtenir un token
         AuthResponse authResponse = performLogin(testUser.getEmail(), TEST_PASSWORD);
 
-        // 2. Accéder à un endpoint protégé
         mockMvc.perform(get("/api/suppliers")
                         .header("Authorization", "Bearer " + authResponse.getAccessToken())
                         .contentType(MediaType.APPLICATION_JSON))
@@ -201,10 +186,8 @@ class SecurityIntegrationTest {
     @Test
     @DisplayName("Accès endpoint admin sans rôle admin → 403 Forbidden")
     void testAccessAdminEndpointWithoutAdminRole() throws Exception {
-        // Login avec utilisateur non-admin
         AuthResponse authResponse = performLogin(testUser.getEmail(), TEST_PASSWORD);
 
-        // Tentative d'accès à un endpoint admin
         mockMvc.perform(get("/api/admin/stats")
                         .header("Authorization", "Bearer " + authResponse.getAccessToken())
                         .contentType(MediaType.APPLICATION_JSON))
@@ -214,29 +197,22 @@ class SecurityIntegrationTest {
     @Test
     @DisplayName("Accès endpoint admin avec rôle admin → 200 OK")
     void testAccessAdminEndpointWithAdminRole() throws Exception {
-        // Login avec utilisateur admin
         AuthResponse authResponse = performLogin(adminUser.getEmail(), TEST_PASSWORD);
 
-        // Accès à un endpoint admin
         mockMvc.perform(get("/api/admin/stats")
                         .header("Authorization", "Bearer " + authResponse.getAccessToken())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }
 
-    // ==================== TESTS REFRESH TOKEN ====================
-
     @Test
     @DisplayName("Refresh avec token valide → nouveau Access Token + nouveau Refresh Token")
     void testRefreshTokenSuccess() throws Exception {
-        // 1. Login initial
         AuthResponse loginResponse = performLogin(testUser.getEmail(), TEST_PASSWORD);
         String originalRefreshToken = loginResponse.getRefreshToken();
 
-        // Petit délai pour garantir un timestamp différent (iat dans JWT)
         Thread.sleep(1500);
 
-        // 2. Utiliser le refresh token
         RefreshTokenRequest refreshRequest = new RefreshTokenRequest();
         refreshRequest.setRefreshToken(originalRefreshToken);
 
@@ -254,7 +230,6 @@ class SecurityIntegrationTest {
                 AuthResponse.class
         );
 
-        // Vérifier que les nouveaux tokens sont différents
         assertThat(refreshResponse.getAccessToken()).isNotEqualTo(loginResponse.getAccessToken());
         assertThat(refreshResponse.getRefreshToken()).isNotEqualTo(originalRefreshToken);
     }
@@ -262,11 +237,9 @@ class SecurityIntegrationTest {
     @Test
     @DisplayName("Refresh Token Rotation → ancien token devient invalide")
     void testRefreshTokenRotation() throws Exception {
-        // 1. Login initial
         AuthResponse loginResponse = performLogin(testUser.getEmail(), TEST_PASSWORD);
         String originalRefreshToken = loginResponse.getRefreshToken();
 
-        // 2. Premier refresh
         RefreshTokenRequest refreshRequest = new RefreshTokenRequest();
         refreshRequest.setRefreshToken(originalRefreshToken);
         
@@ -275,7 +248,6 @@ class SecurityIntegrationTest {
                         .content(objectMapper.writeValueAsString(refreshRequest)))
                 .andExpect(status().isOk());
 
-        // 3. Tentative de réutiliser l'ancien refresh token → doit échouer
         mockMvc.perform(post("/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(refreshRequest)))
@@ -297,16 +269,13 @@ class SecurityIntegrationTest {
     @Test
     @DisplayName("Refresh avec token révoqué → 401 Unauthorized")
     void testRefreshWithRevokedToken() throws Exception {
-        // 1. Login pour obtenir un refresh token
         AuthResponse authResponse = performLogin(testUser.getEmail(), TEST_PASSWORD);
 
-        // 2. Révoquer manuellement le token en base
         RefreshToken token = refreshTokenRepository.findByToken(authResponse.getRefreshToken())
                 .orElseThrow();
         token.setRevoked(true);
         refreshTokenRepository.save(token);
 
-        // 3. Tentative de refresh avec le token révoqué
         RefreshTokenRequest refreshRequest = new RefreshTokenRequest();
         refreshRequest.setRefreshToken(authResponse.getRefreshToken());
 
@@ -316,21 +285,16 @@ class SecurityIntegrationTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    // ==================== TESTS LOGOUT ====================
-
     @Test
     @DisplayName("Logout invalide le refresh token")
     void testLogoutRevokesRefreshToken() throws Exception {
-        // 1. Login
         AuthResponse authResponse = performLogin(testUser.getEmail(), TEST_PASSWORD);
         String refreshToken = authResponse.getRefreshToken();
 
-        // 2. Vérifier que le token existe et n'est pas révoqué
         RefreshToken tokenBeforeLogout = refreshTokenRepository.findByToken(refreshToken)
                 .orElseThrow();
         assertThat(tokenBeforeLogout.isRevoked()).isFalse();
 
-        // 3. Logout
         RefreshTokenRequest logoutRequest = new RefreshTokenRequest();
         logoutRequest.setRefreshToken(refreshToken);
 
@@ -339,7 +303,6 @@ class SecurityIntegrationTest {
                         .content(objectMapper.writeValueAsString(logoutRequest)))
                 .andExpect(status().isNoContent());
 
-        // 4. Vérifier que le token est maintenant révoqué
         RefreshToken tokenAfterLogout = refreshTokenRepository.findByToken(refreshToken)
                 .orElseThrow();
         assertThat(tokenAfterLogout.isRevoked()).isTrue();
@@ -348,11 +311,9 @@ class SecurityIntegrationTest {
     @Test
     @DisplayName("Tentative de refresh après logout → 401 Unauthorized")
     void testRefreshAfterLogout() throws Exception {
-        // 1. Login
         AuthResponse authResponse = performLogin(testUser.getEmail(), TEST_PASSWORD);
         String refreshToken = authResponse.getRefreshToken();
 
-        // 2. Logout
         RefreshTokenRequest logoutRequest = new RefreshTokenRequest();
         logoutRequest.setRefreshToken(refreshToken);
 
@@ -361,7 +322,6 @@ class SecurityIntegrationTest {
                         .content(objectMapper.writeValueAsString(logoutRequest)))
                 .andExpect(status().isNoContent());
 
-        // 3. Tentative de refresh avec le token révoqué
         mockMvc.perform(post("/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(logoutRequest)))
@@ -380,12 +340,9 @@ class SecurityIntegrationTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    // ==================== TESTS ISOLATION & SÉCURITÉ ====================
-
     @Test
     @DisplayName("Aucun endpoint /api/** accessible sans JWT valide")
     void testAllApiEndpointsRequireAuthentication() throws Exception {
-        // Tester plusieurs endpoints API
         String[] protectedEndpoints = {
                 "/api/suppliers",
                 "/api/raw-materials",
@@ -403,12 +360,10 @@ class SecurityIntegrationTest {
     @Test
     @DisplayName("Les endpoints publics restent accessibles sans authentification")
     void testPublicEndpointsAccessible() throws Exception {
-        // Page d'accueil
         mockMvc.perform(get("/")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
-        // Health check
         mockMvc.perform(get("/health")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
@@ -417,40 +372,30 @@ class SecurityIntegrationTest {
     @Test
     @DisplayName("Vérification des statuts HTTP pour scénarios d'erreur")
     void testHttpStatusCodes() throws Exception {
-        // 400 Bad Request - données invalides
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"invalid\"}"))
                 .andExpect(status().isBadRequest());
 
-        // 401 Unauthorized - credentials invalides
         LoginRequest badLogin = new LoginRequest(testUser.getEmail(), "wrongpassword");
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(badLogin)))
                 .andExpect(status().isUnauthorized());
 
-        // 401 Unauthorized - pas de token
         mockMvc.perform(get("/api/suppliers"))
                 .andExpect(status().isUnauthorized());
 
-        // 403 Forbidden - rôle insuffisant
         AuthResponse authResponse = performLogin(testUser.getEmail(), TEST_PASSWORD);
         mockMvc.perform(get("/api/admin/stats")
                         .header("Authorization", "Bearer " + authResponse.getAccessToken()))
                 .andExpect(status().isForbidden());
 
-        // 200 OK - requête valide
         mockMvc.perform(get("/api/suppliers")
                         .header("Authorization", "Bearer " + authResponse.getAccessToken()))
                 .andExpect(status().isOk());
     }
 
-    // ==================== MÉTHODES UTILITAIRES ====================
-
-    /**
-     * Effectue un login et retourne la réponse d'authentification
-     */
     private AuthResponse performLogin(String email, String password) throws Exception {
         LoginRequest loginRequest = new LoginRequest(email, password);
 
